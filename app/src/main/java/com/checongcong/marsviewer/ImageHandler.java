@@ -27,8 +27,8 @@ import java.util.Vector;
  * Created by cche on 2/19/2018.
  */
 
-public class ImageHandler {
-    private static final String TAG = MainActivity.class.getSimpleName();
+class ImageHandler {
+    private static final String TAG = ImageHandler.class.getSimpleName();
 
     private ImageView imageView;
 
@@ -37,15 +37,15 @@ public class ImageHandler {
     private Vector<String> imageUrls = new Vector<>();
     private int imageIndex = -1;
 
-    public ImageHandler(ImageView imageView) {
+    ImageHandler(ImageView imageView) {
         this.imageView = imageView;
     }
 
-    public void start() {
+    void start() {
         new PopulateImageUrlTask().execute();
     }
 
-    public void renderImage(boolean isNext) {
+    void renderImage(boolean isNext) {
         if (imageUrls.isEmpty()) {
             Log.e(TAG, "renderImage error: empty imageUrls");
             return;
@@ -81,7 +81,6 @@ public class ImageHandler {
 
     private InputStream openHttpConnection(String urlStr) {
         InputStream in = null;
-        int resCode = -1;
 
         try {
             URL url = new URL(urlStr);
@@ -96,7 +95,7 @@ public class ImageHandler {
             httpConn.setInstanceFollowRedirects(true);
             httpConn.setRequestMethod("GET");
             httpConn.connect();
-            resCode = httpConn.getResponseCode();
+            int resCode = httpConn.getResponseCode();
 
             if (resCode == HttpURLConnection.HTTP_OK) {
                 in = httpConn.getInputStream();
@@ -121,72 +120,12 @@ public class ImageHandler {
         @Override
         protected Void doInBackground(Void... params) {
             NASAImageApiHandler handler = new NASAImageApiHandler();
-            JSONObject content = handler.fetchUrl(API_URL);
-            if (content == null) {
+            if (!handler.fetchUrl(API_URL, imageUrls)) {
                 Log.e(TAG, "Failed to fetch API");
                 return null;
             }
-            populateImageUrls(content);  // content is guaranteed to be non-null.
+            ImageHandler.this.renderImage(true);
             return null;
-        }
-
-        /* Format of JSONObject:
-
-           {"photos":[
-              {
-                "id":102693,
-                "sol":1000,
-                "camera":{
-                    "id":20,
-                    "name":"FHAZ",
-                    "rover_id":5,
-                    "full_name":"Front Hazard Avoidance Camera"
-                },
-                "img_src":"http://mars.jpl.nasa.gov/msl-raw-images/proj/msl/redops/ods/surface/sol/01000/opgs/edr/fcam/FLB_486265257EDR_F0481570FHAZ00323M_.JPG",
-                "earth_date":"2015-05-30",
-                "rover":{
-                    "id":5,
-                    "name":"Curiosity",
-                    "landing_date":"2012-08-06",
-                    "launch_date":"2011-11-26",
-                    "status":"active",
-                    "max_sol":1968,
-                    "max_date":"2018-02-18",
-                    "total_photos":332219,
-                    "cameras":[
-                        {"name":"FHAZ","full_name":"Front Hazard Avoidance Camera"},
-                        {"name":"NAVCAM","full_name":"Navigation Camera"},
-                        {"name":"MAST","full_name":"Mast Camera"},
-                        {"name":"CHEMCAM","full_name":"Chemistry and Camera Complex"},
-                    ],
-                },
-              },
-              {
-                  // the second photo
-              },
-              {
-                  // the third photo
-              },
-              ...
-          ]}
-         */
-        private void populateImageUrls(JSONObject content) {
-            try {
-                JSONArray photos = content.getJSONArray("photos");
-                for (int i = 0; i < photos.length(); i++) {
-                    JSONObject photo = photos.getJSONObject(i);
-                    String imageUrl = photo.getString("img_src");
-                    if (imageUrl != null && !imageUrl.isEmpty()) {
-                        imageUrls.add(imageUrl);
-                        Log.e(TAG, imageUrl);
-                    } else {
-                        Log.e(TAG, "failed to fetch url");
-                    }
-                }
-                ImageHandler.this.renderImage(true);
-            } catch (JSONException e) {
-                Log.e(TAG, "populateImageUrls JSONException: " + e.getMessage());
-            }
         }
     }
 }
