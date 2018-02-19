@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Mars Viewer</string>
+    <string name="prev_button">Previous</string>
+    <string name="next_button">Next</string>
+</resources>
